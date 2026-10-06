@@ -7,6 +7,9 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const app = express();
 
+app.use(express.json());
+app.use(cors());
+
 const PORT = process.env.PORT || 8000;
 
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -23,8 +26,27 @@ async function connectToMongoDB() {
 
 connectToMongoDB();
 
+const db = client.db("junior-scholars");
+const userCollection = db.collection("user");
+
 app.get('/', (req, res) => {
   res.send("JUNIOR SCHOLARS SERVER is running");
+});
+
+// Student info update API Route
+app.patch('/api/users/student-info/:email', async (req, res) => {
+  const email = req.params.email;
+  const studentData = req.body;
+
+  const filter = { email: email };
+  const updateDoc = {
+    $set: {
+      studentInfo: studentData
+    },
+  };
+
+  const result = await userCollection.updateOne(filter, updateDoc);
+  res.send();
 });
 
 app.listen(PORT, () => {
