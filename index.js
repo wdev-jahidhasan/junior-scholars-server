@@ -58,6 +58,19 @@ app.patch('/api/users/update-profile/:email', async (req, res) => {
   }
 });
 
+// user profile details
+app.get('/api/users/profile/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = await userCollection.findOne(query);
+
+  if (user) {
+    res.send({ success: true, user });
+  } else {
+    res.status(404).send({ success: false, message: "User not found." });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`JUNIOR SCHOLARS is running on port ${PORT}`);
 });
