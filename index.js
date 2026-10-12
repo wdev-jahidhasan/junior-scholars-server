@@ -89,27 +89,11 @@ app.post('/api/publish-notice', async (req, res) => {
   res.send({ success: true, message: "Notice published successfully!", insertedId: result.insertedId });
 });
 
-// app.post('/api/publish-notice', async (req, res) => {
-//   console.log("Received Notice Data:", req.body); // Check korar jonno
-//   const { title, category, audience, publishDate, description } = req.body;
-
-//   try {
-//     const newNotice = {
-//       title,
-//       category,
-//       audience,
-//       date: publishDate,
-//       description,
-//       createdAt: new Date(),
-//     };
-
-//     const result = await noticesCollection.insertOne(newNotice);
-//     res.send({ success: true, message: "Notice published successfully!", insertedId: result.insertedId });
-//   } catch (error) {
-//     console.error("Insert Error:", error);
-//     res.status(500).send({ success: false, message: "Failed to publish notice" });
-//   }
-// });
+// get all notices
+app.get('/api/notices', async (req, res) => {
+  const notices = await noticesCollection.find({}).sort({ createdAt: -1 }).toArray();
+  res.send({ success: true, notices });
+});
 
 app.listen(PORT, () => {
   console.log(`JUNIOR SCHOLARS is running on port ${PORT}`);
