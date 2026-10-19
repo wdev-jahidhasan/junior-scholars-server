@@ -34,6 +34,12 @@ app.get('/', (req, res) => {
   res.send("JUNIOR SCHOLARS SERVER is running");
 });
 
+// get all users from db
+app.get('/api/users', async (req, res) => {
+  const users = await userCollection.find({}).toArray();
+  res.send({ success: true, users });
+});
+
 // profile update api
 app.patch('/api/users/update-profile/:email', async (req, res) => {
   const email = req.params.email;
