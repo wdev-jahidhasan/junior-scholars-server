@@ -36,9 +36,9 @@ app.get('/', (req, res) => {
 
 // get all users from db
 app.get('/api/users', async (req, res) => {
-  const users = await userCollection.find({}).toArray();
+  const users = await userCollection.find({}).sort({ _id: -1 }).toArray();
   res.send({ success: true, users });
-});
+});;
 
 // profile update api
 app.patch('/api/users/update-profile/:email', async (req, res) => {
