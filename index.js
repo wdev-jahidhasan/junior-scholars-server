@@ -4,7 +4,7 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const app = express();
 
 app.use(express.json());
@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 app.get('/api/users', async (req, res) => {
   const users = await userCollection.find({}).sort({ _id: -1 }).toArray();
   res.send({ success: true, users });
-});;
+});
 
 // profile update api
 app.patch('/api/users/update-profile/:email', async (req, res) => {
@@ -99,6 +99,44 @@ app.post('/api/publish-notice', async (req, res) => {
 app.get('/api/notices', async (req, res) => {
   const notices = await noticesCollection.find({}).sort({ createdAt: -1 }).toArray();
   res.send({ success: true, notices });
+});
+
+// update user role
+app.patch('/api/users/:id/role', async (req, res) => {
+  const id = req.params.id;
+  const { role } = req.body;
+
+  const filter = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: { role: role }
+  };
+
+  const result = await userCollection.updateOne(filter, updateDoc);
+
+  if (result.matchedCount > 0) {
+    res.send({ success: true, message: "Role updated successfully!" });
+  } else {
+    res.status(404).send({ success: false, message: "User not found." });
+  }
+});
+
+// update user status
+app.patch('/api/users/:id/status', async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+
+  const filter = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: { status: status }
+  };
+
+  const result = await userCollection.updateOne(filter, updateDoc);
+
+  if (result.matchedCount > 0) {
+    res.send({ success: true, message: "Status updated successfully!" });
+  } else {
+    res.status(404).send({ success: false, message: "User not found." });
+  }
 });
 
 app.listen(PORT, () => {
