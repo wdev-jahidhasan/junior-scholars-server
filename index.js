@@ -115,7 +115,10 @@ app.patch('/api/users/:id/role', async (req, res) => {
 
   const filter = { _id: new ObjectId(id) };
   const updateDoc = {
-    $set: { role: role }
+    $set: {
+      role: role,
+      updatedAt: new Date()
+    }
   };
 
   const result = await userCollection.updateOne(filter, updateDoc);
@@ -134,7 +137,10 @@ app.patch('/api/users/:id/status', async (req, res) => {
 
   const filter = { _id: new ObjectId(id) };
   const updateDoc = {
-    $set: { status: status }
+    $set: {
+      status: status,
+      updatedAt: new Date()
+    }
   };
 
   const result = await userCollection.updateOne(filter, updateDoc);
