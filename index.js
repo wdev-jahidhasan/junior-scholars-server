@@ -40,28 +40,35 @@ app.get('/api/users', async (req, res) => {
   res.send({ success: true, users });
 });
 
-// profile update api
+// Profile Update API
 app.patch('/api/users/update-profile/:email', async (req, res) => {
-  const email = req.params.email;
-  const { name, image, studentInfo } = req.body;
+  try {
+    const email = req.params.email;
+    const { name, image, profile } = req.body;
 
-  const filter = { email: email };
+    const filter = { email: email };
 
-  const updateFields = {};
-  if (name !== undefined) updateFields.name = name;
-  if (image !== undefined) updateFields.image = image;
-  if (studentInfo !== undefined) updateFields.studentInfo = studentInfo;
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (image !== undefined) updateFields.image = image;
+    if (profile !== undefined) updateFields.profile = profile;
 
-  const updateDoc = {
-    $set: updateFields,
-  };
+    updateFields.updatedAt = new Date();
 
-  const result = await userCollection.updateOne(filter, updateDoc);
+    const updateDoc = {
+      $set: updateFields,
+    };
 
-  if (result.modifiedCount > 0 || result.matchedCount > 0) {
-    res.send({ success: true, message: "Profile updated successfully!" });
-  } else {
-    res.status(404).send({ success: false, message: "User not found." });
+    const result = await userCollection.updateOne(filter, updateDoc);
+
+    if (result.matchedCount > 0) {
+      res.send({ success: true, message: "Profile updated successfully!" });
+    } else {
+      res.status(404).send({ success: false, message: "User not found." });
+    }
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).send({ success: false, message: "Internal server error." });
   }
 });
 
