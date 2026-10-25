@@ -138,23 +138,36 @@ app.patch('/api/users/:id/status', async (req, res) => {
   const updateFields = { status, updatedAt: new Date() };
 
   if (status.toLowerCase() === "verified" && !user.userId) {
-    const role = (user.role || "").toLowerCase();
-    const name = (user.name || "USR").substring(0, 3).toUpperCase();
+    const role = (user.role || "").toLowerCase().trim();
     const profile = user.profile || {};
+    const name = (user.name || "USR").substring(0, 3).toUpperCase();
 
-    if (role === "student") {
+    // 1. Guardian role (Student ID pattern: 26-THD-11)
+    if (role === "guardian") {
       const yr = (profile.academicYear || new Date().getFullYear()).toString().slice(-2);
-      const cls = (profile.class || "PL").substring(0, 2).toUpperCase();
-      const sft = (profile.shift || "M").charAt(0).toUpperCase();
-      const roll = profile.roll || "01";
+      const clsPart = (profile.studentClass || profile.class || "TH").substring(0, 2).toUpperCase();
+      const shiftPart = (profile.studentSection || profile.section || profile.shift || "D").charAt(0).toUpperCase();
+      const rollPart = profile.studentRoll || profile.roll || "01";
 
-      updateFields.userId = `${yr}-${cls}${sft}-${roll}`;
-    } else if (role === "teacher") {
-      const sub = (profile.subject || "GEN").substring(0, 3).toUpperCase();
-      updateFields.userId = `TEA-${sub}-${name}`;
-    } else if (role === "staff") {
-      const dept = (profile.department || "OFF").substring(0, 3).toUpperCase();
-      updateFields.userId = `STA-${dept}-${name}`;
+      updateFields.userId = `${yr}-${clsPart}${shiftPart}-${rollPart}`;
+    }
+    // 2. Teacher role (Same as before)
+    else if (role === "teacher") {
+      const teacherCount = await userCollection.countDocuments({
+        role: "teacher",
+        userId: { $regex: /^JS-TEA-/ }
+      });
+      const nextNum = String(teacherCount + 1).padStart(2, '0');
+      updateFields.userId = `JS-TEA-${nextNum}`;
+    }
+    // 3. Staff role (Same as before)
+    else if (role === "staff") {
+      const staffCount = await userCollection.countDocuments({
+        role: "staff",
+        userId: { $regex: /^JS-STA-/ }
+      });
+      const nextNum = String(staffCount + 1).padStart(2, '0');
+      updateFields.userId = `JS-STA-${nextNum}`;
     }
 
     updateFields.verifiedAt = new Date();
