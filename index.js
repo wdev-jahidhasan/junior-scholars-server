@@ -155,8 +155,6 @@ app.patch('/api/users/:id/status', async (req, res) => {
     } else if (role === "staff") {
       const dept = (profile.department || "OFF").substring(0, 3).toUpperCase();
       updateFields.userId = `STA-${dept}-${name}`;
-    } else if (role === "admin") {
-      updateFields.userId = "JS-ADMIN";
     }
 
     updateFields.verifiedAt = new Date();
