@@ -125,7 +125,7 @@ app.patch('/api/users/:id/role', async (req, res) => {
   }
 });
 
-// update user status
+// update user status with ID
 app.patch('/api/users/:id/status', async (req, res) => {
   const id = req.params.id;
   const { status } = req.body;
@@ -140,20 +140,23 @@ app.patch('/api/users/:id/status', async (req, res) => {
   if (status.toLowerCase() === "verified" && !user.userId) {
     const role = (user.role || "").toLowerCase();
     const name = (user.name || "USR").substring(0, 3).toUpperCase();
+    const profile = user.profile || {};
 
     if (role === "student") {
-      const yr = (user.academicYear || new Date().getFullYear()).toString().slice(-2);
-      const cls = (user.class || "PL").substring(0, 2).toUpperCase();
-      const sft = (user.shift || "M").charAt(0).toUpperCase();
-      const roll = user.roll || "01";
+      const yr = (profile.academicYear || new Date().getFullYear()).toString().slice(-2);
+      const cls = (profile.class || "PL").substring(0, 2).toUpperCase();
+      const sft = (profile.shift || "M").charAt(0).toUpperCase();
+      const roll = profile.roll || "01";
 
       updateFields.userId = `${yr}-${cls}${sft}-${roll}`;
     } else if (role === "teacher") {
-      const sub = (user.subject || "GEN").substring(0, 3).toUpperCase();
+      const sub = (profile.subject || "GEN").substring(0, 3).toUpperCase();
       updateFields.userId = `TEA-${sub}-${name}`;
     } else if (role === "staff") {
-      const dept = (user.department || "OFF").substring(0, 3).toUpperCase();
+      const dept = (profile.department || "OFF").substring(0, 3).toUpperCase();
       updateFields.userId = `STA-${dept}-${name}`;
+    } else if (role === "admin") {
+      updateFields.userId = "JS-ADMIN";
     }
 
     updateFields.verifiedAt = new Date();
