@@ -42,33 +42,28 @@ app.get('/api/users', async (req, res) => {
 
 // Profile Update API
 app.patch('/api/users/update-profile/:email', async (req, res) => {
-  try {
-    const email = req.params.email;
-    const { name, image, profile } = req.body;
+  const email = req.params.email;
+  const { name, image, profile } = req.body;
 
-    const filter = { email: email };
+  const filter = { email: email };
 
-    const updateFields = {};
-    if (name !== undefined) updateFields.name = name;
-    if (image !== undefined) updateFields.image = image;
-    if (profile !== undefined) updateFields.profile = profile;
+  const updateFields = {};
+  if (name !== undefined) updateFields.name = name;
+  if (image !== undefined) updateFields.image = image;
+  if (profile !== undefined) updateFields.profile = profile;
 
-    updateFields.updatedAt = new Date();
+  updateFields.updatedAt = new Date();
 
-    const updateDoc = {
-      $set: updateFields,
-    };
+  const updateDoc = {
+    $set: updateFields,
+  };
 
-    const result = await userCollection.updateOne(filter, updateDoc);
+  const result = await userCollection.updateOne(filter, updateDoc);
 
-    if (result.matchedCount > 0) {
-      res.send({ success: true, message: "Profile updated successfully!" });
-    } else {
-      res.status(404).send({ success: false, message: "User not found." });
-    }
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).send({ success: false, message: "Internal server error." });
+  if (result.matchedCount > 0) {
+    res.send({ success: true, message: "Profile updated successfully!" });
+  } else {
+    res.status(404).send({ success: false, message: "User not found." });
   }
 });
 
