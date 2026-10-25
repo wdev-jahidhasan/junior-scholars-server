@@ -136,20 +136,36 @@ app.patch('/api/users/:id/status', async (req, res) => {
   const { status } = req.body;
 
   const filter = { _id: new ObjectId(id) };
-  const updateDoc = {
-    $set: {
-      status: status,
-      updatedAt: new Date()
+  const user = await userCollection.findOne(filter);
+
+  if (!user) return res.status(404).send({ success: false, message: "User not found." });
+
+  const updateFields = { status, updatedAt: new Date() };
+
+  if (status.toLowerCase() === "verified" && !user.userId) {
+    const role = (user.role || "").toLowerCase();
+    const name = (user.name || "USR").substring(0, 3).toUpperCase();
+
+    if (role === "student") {
+      const yr = (user.academicYear || new Date().getFullYear()).toString().slice(-2);
+      const cls = (user.class || "PL").substring(0, 2).toUpperCase();
+      const sft = (user.shift || "M").charAt(0).toUpperCase();
+      const roll = user.roll || "01";
+
+      updateFields.userId = `${yr}-${cls}${sft}-${roll}`;
+    } else if (role === "teacher") {
+      const sub = (user.subject || "GEN").substring(0, 3).toUpperCase();
+      updateFields.userId = `TEA-${sub}-${name}`;
+    } else if (role === "staff") {
+      const dept = (user.department || "OFF").substring(0, 3).toUpperCase();
+      updateFields.userId = `STA-${dept}-${name}`;
     }
-  };
 
-  const result = await userCollection.updateOne(filter, updateDoc);
-
-  if (result.matchedCount > 0) {
-    res.send({ success: true, message: "Status updated successfully!" });
-  } else {
-    res.status(404).send({ success: false, message: "User not found." });
+    updateFields.verifiedAt = new Date();
   }
+
+  await userCollection.updateOne(filter, { $set: updateFields });
+  res.send({ success: true, message: "Status updated successfully!" });
 });
 
 app.listen(PORT, () => {
