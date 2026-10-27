@@ -82,7 +82,16 @@ app.get('/api/users/profile/:email', async (req, res) => {
 
 // publish notices 
 app.post('/api/publish-notice', async (req, res) => {
-  const { title, category, audience, publishDate, description } = req.body;
+  const {
+    title,
+    category,
+    audience,
+    publishDate,
+    description,
+    publisherName,
+    publisherId,
+    publisherRole
+  } = req.body;
 
   const newNotice = {
     title,
@@ -90,11 +99,18 @@ app.post('/api/publish-notice', async (req, res) => {
     audience,
     date: publishDate,
     description,
+    publisherName: publisherName || "Junior Scholars Office",
+    publisherId: publisherId || "N/A",
+    publisherRole: publisherRole || "staff",
     createdAt: new Date(),
   };
 
   const result = await noticesCollection.insertOne(newNotice);
-  res.send({ success: true, message: "Notice published successfully!", insertedId: result.insertedId });
+  res.send({
+    success: true,
+    message: "Notice published successfully!",
+    insertedId: result.insertedId
+  });
 });
 
 // get all notices
