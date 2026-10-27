@@ -133,41 +133,66 @@ app.patch('/api/users/:id/status', async (req, res) => {
   const filter = { _id: new ObjectId(id) };
   const user = await userCollection.findOne(filter);
 
-  if (!user) return res.status(404).send({ success: false, message: "User not found." });
+  if (!user) {
+    return res.status(404).send({ success: false, message: "User not found." });
+  }
 
   const updateFields = { status, updatedAt: new Date() };
+  const lowerStatus = (status || "").toLowerCase().trim();
 
-  if (status.toLowerCase() === "verified" && !user.userId) {
+  if ((lowerStatus === "verified" || lowerStatus === "approved") && !user.userId) {
     const role = (user.role || "").toLowerCase().trim();
     const profile = user.profile || {};
-    const name = (user.name || "USR").substring(0, 3).toUpperCase();
 
-    // 1. Guardian role (Student ID pattern: 26-THD-11)
+    const getYr = (val) => {
+      if (!val) return new Date().getFullYear().toString().slice(-2);
+      const s = val.toString();
+      return s.length >= 4 ? s.slice(0, 4).slice(-2) : s.slice(-2);
+    };
+
     if (role === "guardian") {
-      const yr = (profile.academicYear || new Date().getFullYear()).toString().slice(-2);
+      const yr = getYr(profile.academicYear || profile.joiningDate);
       const clsPart = (profile.studentClass || profile.class || "TH").substring(0, 2).toUpperCase();
       const shiftPart = (profile.studentSection || profile.section || profile.shift || "D").charAt(0).toUpperCase();
-      const rollPart = profile.studentRoll || profile.roll || "01";
+      const rollPart = String(profile.studentRoll || profile.roll || "01").padStart(2, '0');
 
       updateFields.userId = `${yr}-${clsPart}${shiftPart}-${rollPart}`;
     }
-    // 2. Teacher role (Same as before)
+
     else if (role === "teacher") {
-      const teacherCount = await userCollection.countDocuments({
-        role: "teacher",
-        userId: { $regex: /^JS-TEA-/ }
-      });
-      const nextNum = String(teacherCount + 1).padStart(2, '0');
-      updateFields.userId = `JS-TEA-${nextNum}`;
+      const yr = getYr(profile.joiningDate || profile.academicYear);
+
+      const lastTeacher = await userCollection.findOne(
+        { role: "teacher", userId: { $regex: new RegExp(`^${yr}-TCH-`) } },
+        { sort: { userId: -1 } }
+      );
+
+      let nextNum = 1;
+      if (lastTeacher && lastTeacher.userId) {
+        const parts = lastTeacher.userId.split("-");
+        const lastNum = parseInt(parts[2], 10);
+        if (!isNaN(lastNum)) nextNum = lastNum + 1;
+      }
+
+      updateFields.userId = `${yr}-TCH-${String(nextNum).padStart(2, '0')}`;
     }
-    // 3. Staff role (Same as before)
+
     else if (role === "staff") {
-      const staffCount = await userCollection.countDocuments({
-        role: "staff",
-        userId: { $regex: /^JS-STA-/ }
-      });
-      const nextNum = String(staffCount + 1).padStart(2, '0');
-      updateFields.userId = `JS-STA-${nextNum}`;
+      const yr = getYr(profile.joiningDate || profile.academicYear);
+
+      const lastStaff = await userCollection.findOne(
+        { role: "staff", userId: { $regex: new RegExp(`^${yr}-STF-`) } },
+        { sort: { userId: -1 } }
+      );
+
+      let nextNum = 1;
+      if (lastStaff && lastStaff.userId) {
+        const parts = lastStaff.userId.split("-");
+        const lastNum = parseInt(parts[2], 10);
+        if (!isNaN(lastNum)) nextNum = lastNum + 1;
+      }
+
+      updateFields.userId = `${yr}-STF-${String(nextNum).padStart(2, '0')}`;
     }
 
     updateFields.verifiedAt = new Date();
