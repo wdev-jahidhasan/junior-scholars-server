@@ -29,6 +29,7 @@ connectToMongoDB();
 const db = client.db("junior-scholars");
 const userCollection = db.collection("user");
 const noticesCollection = db.collection("notices");
+const diariesCollection = db.collection("diaries");
 
 app.get('/', (req, res) => {
   res.send("JUNIOR SCHOLARS SERVER is running");
@@ -216,6 +217,70 @@ app.patch('/api/users/:id/status', async (req, res) => {
 
   await userCollection.updateOne(filter, { $set: updateFields });
   res.send({ success: true, message: "Status updated successfully!" });
+});
+
+// write digital diary
+app.patch('/api/write-diary', async (req, res) => {
+  const {
+    className,
+    subjectName,
+    teacherName,
+    diaryDate,
+    details,
+    publisherName,
+    publisherId
+  } = req.body;
+
+  const targetDate = new Date(diaryDate);
+  targetDate.setHours(0, 0, 0, 0);
+
+  const formattedClassName = className.toLowerCase().replace(/\s+/g, '');
+  const classFieldPath = `classes.${formattedClassName}`;
+
+  const newSubjectTask = {
+    subjectName,
+    teacherName,
+    details,
+    updatedAt: new Date()
+  };
+
+  await db.collection("diaries").updateOne(
+    { date: targetDate },
+    {
+      $set: {
+        publisherName: publisherName || "Junior Scholars Office",
+        publisherId: publisherId || "N/A",
+        updatedAt: new Date()
+      },
+      $setOnInsert: {
+        date: targetDate,
+        "classes.play": [],
+        "classes.nursery": [],
+        "classes.one": [],
+        "classes.two": [],
+        "classes.three": [],
+        "classes.four": [],
+        "classes.five": [],
+        createdAt: new Date()
+      }
+    },
+    { upsert: true }
+  );
+
+  await db.collection("diaries").updateOne(
+    { date: targetDate },
+    { $pull: { [classFieldPath]: { subjectName: subjectName } } }
+  );
+
+  await db.collection("diaries").updateOne(
+    { date: targetDate },
+    { $push: { [classFieldPath]: newSubjectTask } }
+  );
+
+  res.send({
+    success: true,
+    message: "Digital diary entry successfully saved!"
+  });
 });
 
 app.listen(PORT, () => {
