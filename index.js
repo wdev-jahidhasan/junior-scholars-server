@@ -283,6 +283,42 @@ app.patch('/api/write-diary', async (req, res) => {
   });
 });
 
+// Get Digital Diary by Class and Date
+app.get('/api/diaries', async (req, res) => {
+  const { className, date } = req.query;
+
+  if (!className || !date) {
+    return res.status(400).send({ success: false, message: "Class and Date are required." });
+  }
+
+  const targetDate = new Date(date);
+  targetDate.setHours(0, 0, 0, 0);
+
+  const formattedClassName = className.toLowerCase().replace(/\s+/g, '');
+
+  const diaryDoc = await db.collection("diaries").findOne({ date: targetDate });
+
+  if (diaryDoc && diaryDoc.classes && diaryDoc.classes[formattedClassName]) {
+    res.send({
+      success: true,
+      data: {
+        subjects: diaryDoc.classes[formattedClassName],
+        publisherName: diaryDoc.publisherName,
+        updatedAt: diaryDoc.updatedAt,
+      }
+    });
+  } else {
+    res.send({
+      success: true,
+      data: {
+        subjects: [],
+        publisherName: null,
+        updatedAt: null,
+      }
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`JUNIOR SCHOLARS is running on port ${PORT}`);
 });
